@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МОДО Дайындық Жүйесі</title>
+    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=X7WspaucYj_Sj34BiMp_0apAnsABS93OTXVkPvukgIV8eOGDcYQZRiCZj0z3FHauAbyZmkJtnxjsF_LmS9nEkFwFRtn7rU6mp4t6HI4GtQ3mcWP65epY3TxndfLgKyMIzt5NOYFYKmZzCakF-kYBjhVipwAtZvYxLJP9VXk2ydUtcmCzVUmVsjFNXTpyae5HrDP0Pk5ElnL2Is4VmvpoApb0xX7iZcW-_7eQVy5FveA9VMt4e2Nwoe1B0X7zteFgP4aCMDbiQZK-kkcrSGOBcOXovBCMk4zUXcgyABmAWVY814bFYG0hoNRSjI7SSWfDaxfERT_VYOFdiaYBS8WExA" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-800">
+
+    <div id="app" class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-10">
+        
+        <!-- Бет 1: Тіркелу -->
+        <div id="page-registration" class="page active">
+            <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">МОДО-2026 Тіркелу</h1>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Толық аты-жөніңіз</label>
+                    <input type="text" id="username" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Мысалы: Алиев Али">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Сынып</label>
+                    <select id="usergrade" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="4">4-сынып</option>
+                        <option value="9">9-сынып</option>
+                    </select>
+                </div>
+                <button onclick="registerUser()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">Тіркелу және Бастау</button>
+            </div>
+        </div>
+
+        <!-- Бет 2: Тестілеу -->
+        <div id="page-test" class="page">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="test-title" class="text-xl font-bold"></h2>
+                <span id="user-display" class="text-sm bg-slate-100 px-3 py-1 rounded-full"></span>
+            </div>
+            <form id="quiz-form" class="space-y-6">
+                <div id="questions-container" class="space-y-6"></div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg">Нәтижені көру</button>
+            </form>
+        </div>
+
+        <!-- Бет 3: Нәтиже -->
+        <div id="page-results" class="page">
+            <h2 class="text-2xl font-bold mb-4 text-center">Тест аяқталды!</h2>
+            <p id="score-text" class="text-lg mb-6 text-center font-bold text-blue-700"></p>
+            <div class="my-6 flex justify-center">
+                <div style="width:350px;height:350px;">
+                    <canvas id="resultChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Мониторинг кестесі -->
+            <div class="mt-6">
+                <h3 class="font-bold text-lg border-b pb-2 mb-3">Нәтижелер мониторингі:</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border">
+                        <thead class="bg-slate-100 uppercase">
+                            <tr>
+                                <th class="p-2">Күні</th>
+                                <th class="p-2">Сынып</th>
+                                <th class="p-2">Нәтиже</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Қатемен жұмыс -->
+            <div id="review-container" class="mt-8 space-y-4">
+                <h3 class="font-bold text-lg border-b pb-2">Қатемен жұмыс:</h3>
+                <div id="wrong-answers-list"></div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-900 text-white px-8 py-3 rounded-lg">Жаңа тест бастау</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tests = {
+            "4": [
+                { "subject": "Математика", "question": "25 + 17 қосындысы нешеге тең?", "options": ["42", "43", "41", "40"], "answer": "42" },
+                { "subject": "Математика", "question": "Қабырғасы 6 см шаршының ауданы қандай?", "options": ["24 см²", "36 см²", "12 см²", "18 см²"], "answer": "36 см²" },
+                { "subject": "Математика", "question": "810 : 9 өрнегінің мәнін табыңыз.", "options": ["9", "90", "900", "80"], "answer": "90" },
+                { "subject": "Жаратылыстану", "question": "Адам денесіндегі ең маңызды тірек қызметін атқаратын мүшелер жүйесі қалай аталады?", "options": ["Бұлшықет жүйесі", "Қаңқа", "Жүйке жүйесі", "Қан айналым жүйесі"], "answer": "Қаңқа" },
+                { "subject": "Жаратылыстану", "question": "Табиғатта судың кездесетін үш күйін атаңыз.", "options": ["Қатты, сұйық, газ", "Суық, жылы, ыстық", "Мөлдір, түссіз, дәмсіз", "Мұз, бу, қар"], "answer": "Қатты, сұйық, газ" },
+                { "subject": "Жаратылыстану", "question": "Жерге ең жақын орналасқан жұлдызды атаңыз.", "options": ["Шолпан", "Күн", "Темірқазық", "Марс"], "answer": "Күн" },
+                { "subject": "Қазақ тілі", "question": "Төмендегі сөздердің ішінен зат есімді табыңыз.", "options": ["Әдемі", "Оқушы", "Жүгірді", "Бес"], "answer": "Оқушы" },
+                { "subject": "Қазақ тілі", "question": "Сөйлемнің тұрлаулы мүшелерін атаңыз.", "options": ["Бастауыш пен баяндауыш", "Анықтауыш пен толықтауыш", "Пысықтауыш пен анықтауыш", "Бастауыш пен толықтауыш"], "answer": "Бастауыш пен баяндауыш" },
+                { "subject": "Қазақ тілі", "question": "«Кітап» сөзіне көптік жалғауының дұрыс жалғанған түрін көрсетіңіз.", "options": ["Кітаптар", "Кітаптарды", "Кітаптарға", "Кітаптың"], "answer": "Кітаптар" },
+                { "subject": "Дүниетану", "question": "Қазақстан Республикасының елордасы қай қала?", "options": ["Алматы", "Шымкент", "Астана", "Тараз"], "answer": "Астана" }
+            ],
+            "9": [
+                { question: "Мақсат бағыныңқылы сабақтас құрмалас сөйлемді табыңыз:", options: ["Күн жылынып, қар ери бастады.", "Білім алу үшін көп оқу керек.", "Егер сен келсең, біз барамыз.", "Ол келгенде, мен далада жүр едім."], answer: "Білім алу үшін көп оқу керек." },
+                { question: "Көп нүктенің орнына тиісті жалғауды қойыңыз: Біз мектеп... келе жатырмыз.", options: ["-ке", "-тен", "-ке қарай", "-пен"], answer: "-тен" },
+                { question: "Тұрақты сөз тіркесінің мағынасын табыңыз: 'Қол қусырып отыру'", options: ["Ештеңе істемей бос отыру", "Біреуге көмектесу", "Жұмыс істеу", "Ренжу"], answer: "Ештеңе істемей бос отыру" },
+                { question: "Қазақстанның қай облысында ең үлкен көл — Балқаш орналасқан (ішінара)?", options: ["Қарағанды және Алматы", "Ақтөбе", "Батыс Қазақстан", "Қостанай"], answer: "Қарағанды және Алматы" },
+                { question: "Дүниежүзіндегі ең терең көлді атаңыз:", options: ["Байкал", "Каспий", "Виктория", "Мичиган"], answer: "Байкал" },
+                { question: "Қазақстанмен шектесетін ең ұзын шекара қай мемлекетке тиесілі?", options: ["Қытай", "Ресей", "Өзбекстан", "Қырғызстан"], answer: "Ресей" },
+                { question: "Ньютонның екінші заңының формуласы қандай?", options: ["F = m * a", "E = m * c²", "P = m * g", "v = s / t"], answer: "F = m * a" },
+                { question: "Жарықтың вакуумдегі таралу жылдамдығы шамамен қаншаға тең?", options: ["300 000 км/с", "300 000 м/с", "150 000 км/с", "30 000 км/с"], answer: "300 000 км/с" },
+                { question: "Кернеудің өлшем бірлігі қандай?", options: ["Ампер (А)", "Вольт (В)", "Ом", "Джоуль (Дж)"], answer: "Вольт (В)" },
+                { question: "Адам организміндегі ең ірі безді атаңыз:", options: ["Бауыр", "Қалқанша безі", "Ұйқы безі", "Сілекей безі"], answer: "Бауыр" },
+                { question: "ДНҚ молекуласының құрамына кірмейтін азотты негізді табыңыз:", options: ["Аденин", "Тимин", "Урацил", "Цитозин"], answer: "Урацил" },
+                { question: "Органикалық заттарды синтездейтін өсімдік жасушасының органоидын атаңыз:", options: ["Хлоропласт", "Митохондрия", "Рибосома", "Лизосома"], answer: "Хлоропласт" }
+            ]
+        };
+
+        let userName = "", userGrade = "", currentTestData = [];
+        let resultChart = null;
+
+        function drawChart(correct, total) {
+            const wrong = total - correct;
+            const ctx = document.getElementById('resultChart').getContext('2d');
+
+            if (resultChart) resultChart.destroy();
+
+            resultChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Дұрыс жауап', 'Қате жауап'],
+                    datasets: [{
+                        data: [correct, wrong],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+        }
+
+        function registerUser() {
+            userName = document.getElementById('username').value;
+            userGrade = document.getElementById('usergrade').value;
+            if(!userName) { alert("Аты-жөніңізді енгізіңіз!"); return; }
+            document.getElementById('user-display').innerText = userName + " (" + userGrade + "-сынып)";
+            startTest(userGrade);
+        }
+
+        function startTest(grade) {
+            currentTestData = tests[grade];
+            document.getElementById('test-title').innerText = "МОДО - " + grade + "-сынып сынағы";
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            currentTestData.forEach((q, index) => {
+                const div = document.createElement('div');
+                div.className = 'border-b border-slate-200 pb-4';
+                div.innerHTML = `<p class="font-semibold mb-3">${index + 1}. ${q.question}</p>`;
+                q.options.forEach(opt => {
+                    div.innerHTML += `<label class="flex items-center space-x-3 p-2 hover:bg-slate-50 cursor-pointer rounded">
+                            <input type="radio" name="q${index}" value="${opt}" required class="w-4 h-4 text-blue-600">
+                            <span>${opt}</span></label>`;
+                });
+                container.appendChild(div);
+            });
+            showPage('test');
+        }
+
+
+function saveResult(score) {
+    const history = JSON.parse(localStorage.getItem('modo_history') || '[]');
+
+    history.push({
+        date: new Date().toLocaleDateString(),
+        grade: userGrade,
+        score: score + '/' + currentTestData.length
+    });
+
+    localStorage.setItem('modo_history', JSON.stringify(history));
+    displayHistory();
+
+    const url =
+    "https://script.google.com/macros/s/AKfycbyU2m-pT1LJT4XOpHGO34cIULjNJUJ_DiCLml_eSCfI2uhJfis6VSjkN84myFEcuWnI/exec"
+    + "?name=" + encodeURIComponent(userName)
+    + "&grade=" + encodeURIComponent(userGrade)
+    + "&score=" + encodeURIComponent(score + "/" + currentTestData.length);
+
+    new Image().src = url;
+}
+
+        function displayHistory() {
+            const history = JSON.parse(localStorage.getItem('modo_history') || '[]');
+            const table = document.getElementById('history-table');
+            table.innerHTML = history.map(h => `
+                <tr class="border-b">
+                    <td class="p-2">${h.date}</td>
+                    <td class="p-2">${h.grade}-сынып</td>
+                    <td class="p-2 font-bold">${h.score}</td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('quiz-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let score = 0;
+            const formData = new FormData(this);
+            const reviewList = document.getElementById('wrong-answers-list');
+            reviewList.innerHTML = '';
+            
+            currentTestData.forEach((q, index) => {
+                const userAns = formData.get(`q${index}`);
+                if (userAns === q.answer) {
+                    score++;
+                } else {
+                    reviewList.innerHTML += `<div class="p-3 bg-red-50 rounded mb-2">
+                        <p class="text-sm font-bold text-red-800">Сұрақ: ${q.question}</p>
+                        <p class="text-sm">Сіздің жауабыңыз: <span class="font-semibold">${userAns || 'Жауап берілмеді'}</span></p>
+                        <p class="text-sm text-emerald-700">Дұрыс жауап: <span class="font-semibold">${q.answer}</span></p>
+                    </div>`;
+                }
+            });
+
+            document.getElementById('score-text').innerText = userName + ", сіз " + currentTestData.length + " сұрақтың " + score + "-іне дұрыс жауап бердіңіз!";
+            drawChart(score, currentTestData.length);
+            saveResult(score);
+            showPage('results');
+        });
+    </script>
+</body>
+</html>
